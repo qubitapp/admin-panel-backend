@@ -1,40 +1,51 @@
+import 'dotenv/config'; // loads dotenv before anything else
 import express from "express";
-import serverless from "serverless-http";
-import pkg from "pg";
-const { Pool } = pkg;
+import { AppDataSource } from "./data.source.js";
+import { User } from "./entities/User.js";
+import { News } from "./entities/Post.js";
 import dotenv from "dotenv";
+
 dotenv.config();
-
-
-// PostgreSQL pool connection
-console.log("DB Host from env:", process.env.DB_HOST);
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : undefined,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl: { rejectUnauthorized: false }, // <— important for AWS RDS
-});
-console.log("DB Host:", process.env.DB_HOST);
+console.log("DB_HOST:", process.env.DB_HOST);
+console.log("DB_USER:", process.env.DB_USER);
+console.log("DB_PASSWORD:", process.env.DB_PASSWORD);
+console.log("DB_NAME:", process.env.DB_NAME);
 
 const app = express();
+app.use(express.json());
 
-// Simple API endpoint
-app.get("/", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-    res.json({ time: result.rows[0].now });
-  } catch (err) {
-    if (err instanceof Error) {
-      console.error("DB connection failed:", err.message);
-    } else {
-      // err may be unknown (string, object, etc.) — log it safely
-      console.error("DB connection failed:", err);
-    }
-    res.status(500).json({ error: "Database connection failed" });
-  }
+AppDataSource.initialize().then(() => {
+  console.log("✅ Data Source initialized");
+
+  // Create user
+  app.post("/users", async (req, res) => {
+    const repo = AppDataSource.getRepository(User);
+    const user = repo.create(req.body);
+    const saved = await repo.save(user);
+    res.json(saved);
+  });
+
+  // Create post linked to a user
+  app.post("/posts", async (req, res) => {
+    const { userId, ...data } = req.body;
+    const userRepo = AppDataSource.getRepository(User);
+    const postRepo = AppDataSource.getRepository(News);
+
+    const user = await userRepo.findOneBy({ id: userId });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const post = postRepo.create({ ...data, user });
+    const saved = await postRepo.save(post);
+    res.json(saved);
+  });
+
+  // Get all posts with their user
+  app.get("/posts", async (_, res) => {
+    const posts = await AppDataSource.getRepository(News).find({
+      relations: ["user"],
+    });
+    res.json(posts);
+  });
+
+  app.listen(3000, () => console.log("🚀 Server running on port 3000"));
 });
-
-// Export Express app as Lambda handler
-export const handler = serverless(app);
