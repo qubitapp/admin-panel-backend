@@ -1,0 +1,48 @@
+{
+  "name": "codebase-personal",
+  "version": "1.0.0",
+  "description": "Serverless TypeScript Express app with PostgreSQL",
+  "type": "module",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "start": "npm run clean && npm run build && node dist/app.js",
+    "start:dev": "ts-node src/app.ts",
+    "local": "serverless offline start",
+    "deploy": "serverless deploy",
+    "offline": "npm run build && serverless offline"
+  },
+  "dependencies": {
+    "axios": "^1.10.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dependencyjs": "^2.0.9-0",
+    "express": "^4.21.2",
+    "express-validator": "^7.2.1",
+    "form-data": "^4.0.3",
+    "google-ads-api": "^19.0.2-rest-beta",
+    "googleapis": "^148.0.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.15.5",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "serverless-http": "^3.2.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/pg": "^8.11.14",
+    "@types/node": "^22.9.0",
+    "rimraf": "^6.0.1",
+    "serverless": "^3.40.0",
+    "serverless-dotenv-plugin": "^6.0.0",
+    "serverless-esbuild": "^1.49.0",
+    "serverless-offline": "^12.0.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
