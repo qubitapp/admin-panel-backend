@@ -1,25 +1,30 @@
 import express from "express";
 import serverless from "serverless-http";
 import { AppDataSource } from "./data.source.js";
-import { User } from "./entities/User.js";
+import bodyParser from "body-parser";
+import newsRoutes from "./routes/postRoutes.js";
 
 const app = express();
-app.use(express.json());
+app.use(bodyParser.json());
+app.use("/api/news", newsRoutes);
 
 const ensureDB = async () => {
   if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
+    try {
+      await AppDataSource.initialize();
+      console.log("🟢 Database connected successfully!");
+    } catch (err) {
+      console.error("🔴 Error initializing database:", err);
+    }
   }
 };
+
+// Initialize DB before first request
+ ensureDB().catch((err) => console.error(err));
 
 // Health check
 app.get("/", (req, res) => {
   res.send("✅ Qubit Backend is running fine!");
 });
-
-// Create user
-if (process.env.IS_OFFLINE) {
-  app.listen(3000, () => console.log("✅ Local: http://localhost:3000"));
-}
 
 export const handler = serverless(app);

@@ -13,6 +13,6 @@ export const AppDataSource = new DataSource({
   database: String(process.env.DB_NAME).trim(),
   synchronize: true,
   logging: false,
-  entities: [User, News],
-  ssl: { rejectUnauthorized: false }, // for dev/test, accepts RDS certificate
+  entities: [News], // ✅ explicit entities
+  ssl: { rejectUnauthorized: false },
 });
