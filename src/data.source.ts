@@ -2,7 +2,7 @@ import "dotenv/config";
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { User } from "./entities/User.js";
-import { News } from "./entities/Post.js";
+import { News } from "./entities/Post";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -13,6 +13,6 @@ export const AppDataSource = new DataSource({
   database: String(process.env.DB_NAME).trim(),
   synchronize: true,
   logging: false,
-  entities: [News], // ✅ explicit entities
+  entities: [News, User], // ✅ explicit entities
   ssl: { rejectUnauthorized: false },
 });
