@@ -4,26 +4,25 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from "typeorm";
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id!: number; // ✅
+  id!: number;
 
-  @Column({ length: 100 })
+  @Column({ type: "varchar", length: 100 })
   name!: string;
 
-  @Column({ unique: true, length: 150 })  
+  @Column({ type: "varchar", unique: true, length: 150 })
   email!: string;
 
-  @Column({ length: 255 })
+  @Column({ type: "varchar", length: 255 })
   password!: string;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: "created_at", type: "timestamp" })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
+  @UpdateDateColumn({ name: "updated_at", type: "timestamp" })
   updatedAt!: Date;
 }

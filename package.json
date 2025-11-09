@@ -1,7 +1,6 @@
 {
   "name": "codebase-personal",
   "version": "1.0.0",
-  "type": "module",
   "description": "Serverless TypeScript Express app with PostgreSQL",
   "main": "dist/app.js",
   "scripts": {
