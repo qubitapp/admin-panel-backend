@@ -5,6 +5,14 @@ import bodyParser from "body-parser";
 import newsRoutes from "./routes/postRoutes.js";
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "*", // or specify your frontend: ["https://your-frontend.com"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(bodyParser.json());
 
 // ✅ Initialization flag
