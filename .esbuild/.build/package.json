@@ -1,0 +1,10 @@
+{
+  "name": "Qubit-Backend",
+  "version": "1.0.0",
+  "description": "Packaged externals for Qubit-Backend",
+  "private": true,
+  "scripts": {},
+  "dependencies": {
+    "pg": "^8.11.5"
+  }
+}

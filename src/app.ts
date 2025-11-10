@@ -1,51 +1,66 @@
-import 'dotenv/config'; // loads dotenv before anything else
 import express from "express";
+import serverless from "serverless-http";
 import { AppDataSource } from "./data.source.js";
-import { User } from "./entities/User.js";
-import { News } from "./entities/Post.js";
-import dotenv from "dotenv";
-
-dotenv.config();
-console.log("DB_HOST:", process.env.DB_HOST);
-console.log("DB_USER:", process.env.DB_USER);
-console.log("DB_PASSWORD:", process.env.DB_PASSWORD);
-console.log("DB_NAME:", process.env.DB_NAME);
+import bodyParser from "body-parser";
+import newsRoutes from "./routes/postRoutes.js";
+import cors from "cors";
 
 const app = express();
-app.use(express.json());
 
-AppDataSource.initialize().then(() => {
-  console.log("✅ Data Source initialized");
+app.use(
+  cors({
+    origin: "*", // or specify your frontend: ["https://your-frontend.com"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+app.use(bodyParser.json());
 
-  // Create user
-  app.post("/users", async (req, res) => {
-    const repo = AppDataSource.getRepository(User);
-    const user = repo.create(req.body);
-    const saved = await repo.save(user);
-    res.json(saved);
-  });
+// ✅ Initialization flag
+let isInitialized = false;
 
-  // Create post linked to a user
-  app.post("/posts", async (req, res) => {
-    const { userId, ...data } = req.body;
-    const userRepo = AppDataSource.getRepository(User);
-    const postRepo = AppDataSource.getRepository(News);
+const initDB = async () => {
+  if (!isInitialized) {
+    try {
+      await AppDataSource.initialize();
+      isInitialized = true;
+      console.log("🟢 Database connected successfully!");
+    } catch (err) {
+      console.error("🔴 Error initializing database:", err);
+      throw err; // important so Lambda fails if DB is unreachable
+    }
+  }
+};
 
-    const user = await userRepo.findOneBy({ id: userId });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const post = postRepo.create({ ...data, user });
-    const saved = await postRepo.save(post);
-    res.json(saved);
-  });
-
-  // Get all posts with their user
-  app.get("/posts", async (_, res) => {
-    const posts = await AppDataSource.getRepository(News).find({
-      relations: ["user"],
-    });
-    res.json(posts);
-  });
-
-  app.listen(3000, () => console.log("🚀 Server running on port 3000"));
+// Health check
+app.get("/", async (req, res) => {
+  await initDB(); // ensure DB initialized even for health check
+  res.send("✅ Qubit Backend is running fine!");
 });
+
+// News routes
+app.use("/api/news", async (req, res, next) => {
+  try {
+    await initDB(); // ensure DB initialized before any request to /api/news
+    next();
+  } catch (err: unknown) {
+    // Normalize unknown error to a string message
+    let errorMessage = "Unknown error";
+    if (err instanceof Error) {
+      errorMessage = err.message;
+    } else if (typeof err === "string") {
+      errorMessage = err;
+    } else {
+      try {
+        errorMessage = JSON.stringify(err);
+      } catch {
+        // keep default if non-serializable
+      }
+    }
+    console.error("🔴 Error initializing database:", err);
+    res.status(500).json({ message: "Internal server error", error: errorMessage });
+  }
+}, newsRoutes);
+
+// Export Lambda handler
+export const handler = serverless(app);

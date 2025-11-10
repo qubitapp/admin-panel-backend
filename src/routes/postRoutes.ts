@@ -1,41 +1,119 @@
-import { Router } from "express";
-import { AppDataSource } from "../data.source";
-import { News } from "../entities/Post";
+import express from "express";
+import { News } from "../entities/Post.js";
+import { AppDataSource } from "../data.source.js";
 
-const router = Router();
-const postRepo = AppDataSource.getRepository(News);
+const router = express.Router();
 
-// GET all posts
-router.get("/", async (req, res) => {
-  const posts = await postRepo.find();
-  res.json(posts);
-});
-
-// GET post by ID
-router.get("/:id", async (req, res) => {
-  const post = await postRepo.findOneBy({ id: parseInt(req.params.id) });
-  post ? res.json(post) : res.status(404).send("Post not found");
-});
-
-// CREATE new post
+// ✅ POST /api/news — Add a new news record
 router.post("/", async (req, res) => {
-  const post = postRepo.create(req.body);
-  const result = await postRepo.save(post);
-  res.status(201).json(result);
+  try {
+    const {
+      title,
+      summary,
+      source,
+      imageLink,
+      category,
+      subCategory,
+      typeOfNews,
+      publisherName,
+      dateOfNews,
+      scoring,
+      srNo,
+      content,
+      // userId, // 👈 Comes from frontend
+    } = req.body;
+    if (!title) {
+      return res.status(400).json({ message: "Title is required" });
+    }
+
+    // if (!userId) {
+    //   return res.status(400).json({ message: "userId is required" });
+    // }
+
+    // const userRepo = AppDataSource.getRepository(User);
+    // const user = await userRepo.findOneBy({ id: userId });
+
+    // if (!user) {
+    //   return res.status(404).json({ message: "User not found" });
+    // }
+
+    const newsRepo = AppDataSource.getRepository(News);
+
+    const newNews = newsRepo.create({
+      title,
+      summary,
+      source,
+      imageLink,
+      category,
+      subCategory,
+      typeOfNews,
+      publisherName,
+      dateOfNews,
+      scoring,
+      srNo,
+      content,
+      // user,
+    });
+
+    await newsRepo.save(newNews);
+
+    return res.status(201).json({
+      message: "News created successfully",
+      data: newNews,
+    });
+  } catch (error) {
+    console.error("Error adding news:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
 });
 
-// UPDATE post
-router.put("/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  await postRepo.update(id, req.body);
-  const updated = await postRepo.findOneBy({ id });
-  res.json(updated);
+router.get("/", async (req, res) => {
+  try {
+    const newsRepo = AppDataSource.getRepository(News);
+    const newsList = await newsRepo.find({
+      order: { createdAt: "DESC" }, // newest first
+    });
+
+    return res.status(200).json({
+      message: "News fetched successfully",
+      data: newsList,
+    });
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
 });
 
-// DELETE post
-router.delete("/:id", async (req, res) => {
-  await postRepo.delete(parseInt(req.params.id));
-  res.status(204).send();
+// ✅ GET /api/news/:id — Get a single news by ID
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const newsRepo = AppDataSource.getRepository(News);
+
+    const newsItem = await newsRepo.findOneBy({ id: Number(id) });
+
+    if (!newsItem) {
+      return res.status(404).json({ message: "News not found" });
+    }
+
+    return res.status(200).json({
+      message: "News fetched successfully",
+      data: newsItem,
+    });
+  } catch (error) {
+    console.error("Error fetching news:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
 });
+
 
 export default router;

@@ -4,34 +4,56 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
 } from "typeorm";
-import { User } from "./User.js";
 
 @Entity()
-export class News{
+export class News {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  // Title cannot be null, default is 'Untitled' for existing rows
-  @Column({ length: 255, nullable: false, default: "Untitled" })
+  @Column({ type: "varchar", length: 255, nullable: false })
   title!: string;
 
-  // Category cannot be null, default is 'General' for existing rows
-  @Column({ length: 100, nullable: false, default: "General" })
+  @Column({ type: "text", nullable: true })
+  summary?: string;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  source?: string;
+
+  @Column({ type: "varchar", length: 500, nullable: true })
+  imageLink?: string;
+
+  @Column({ type: "varchar", length: 100, nullable: false, default: "General" })
   category!: string;
 
-  // Content can be nullable
+  @Column({ type: "varchar", length: 100, nullable: true })
+  subCategory?: string;
+
+  @Column({ type: "varchar", length: 100, nullable: true })
+  typeOfNews?: string;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  publisherName?: string;
+
+  @Column({ type: "varchar", length: 50, nullable: true })
+  dateOfNews?: string;
+
+  @Column({ type: "float", nullable: true, default: 0 })
+  scoring?: number;
+
+  @Column({ type: "uuid", unique: true, default: () => "uuid_generate_v4()" })
+  srNo!: string;
+
   @Column({ type: "text", nullable: true })
   content?: string;
 
-  // Relation to User
-  @ManyToOne(() => User, user => user.id)
-  user!: User;
+  // @ManyToOne(() => User, (user) => user.name, { onDelete: "CASCADE" })
+  // @JoinColumn({ name: "user_id" })
+  // user!: User;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({ name: "created_at", type: "timestamp" })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
+  @UpdateDateColumn({ name: "updated_at", type: "timestamp" })
   updatedAt!: Date;
 }
