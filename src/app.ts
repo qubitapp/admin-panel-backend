@@ -3,6 +3,7 @@ import serverless from "serverless-http";
 import { AppDataSource } from "./data.source.js";
 import bodyParser from "body-parser";
 import newsRoutes from "./routes/postRoutes.js";
+import cors from "cors";
 
 const app = express();
 
