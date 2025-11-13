@@ -65,6 +65,45 @@ router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// Signup API
+router.post("/signup", async (req: Request, res: Response) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+
+    // Check if user already exists
+    const existingUser = await userRepository.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const user = userRepository.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    // Save user to database
+    await userRepository.save(user);
+
+    // Send success response (omit password in response)
+    const { password: _, ...userWithoutPassword } = user;
+    return res.status(201).json({ message: "User created", user: userWithoutPassword });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // 🔐 LOGIN API
 router.post("/login", async(req: Request, res: Response)=>{
   try{
