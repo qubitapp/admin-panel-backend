@@ -1,11 +1,13 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { News } from "../entities/Post.js";
 import { AppDataSource } from "../data.source.js";
+import { verifyToken } from "../middleWare/authMiddleWare.js";
+
 
 const router = express.Router();
 
 // ✅ POST /api/news — Add a new news record
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
     const {
       title,
@@ -70,7 +72,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     const newsRepo = AppDataSource.getRepository(News);
     const newsList = await newsRepo.find({
@@ -91,7 +93,7 @@ router.get("/", async (req, res) => {
 });
 
 // ✅ GET /api/news/:id — Get a single news by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const newsRepo = AppDataSource.getRepository(News);
@@ -115,5 +117,83 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// 🟢 PUT /api/news/:id — Update existing news
+router.put("/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      summary,
+      source,
+      imageLink,
+      category,
+      subCategory,
+      typeOfNews,
+      publisherName,
+      dateOfNews,
+      scoring,
+      srNo,
+      content,
+    } = req.body;
+
+    const newsRepo = AppDataSource.getRepository(News);
+    const existingNews = await newsRepo.findOneBy({ id: Number(id) });
+
+    if (!existingNews) {
+      return res.status(404).json({ message: "News not found" });
+    }
+
+    // Update only provided fields
+    Object.assign(existingNews, {
+      title: title ?? existingNews.title,
+      summary: summary ?? existingNews.summary,
+      source: source ?? existingNews.source,
+      imageLink: imageLink ?? existingNews.imageLink,
+      category: category ?? existingNews.category,
+      subCategory: subCategory ?? existingNews.subCategory,
+      typeOfNews: typeOfNews ?? existingNews.typeOfNews,
+      publisherName: publisherName ?? existingNews.publisherName,
+      dateOfNews: dateOfNews ?? existingNews.dateOfNews,
+      scoring: scoring ?? existingNews.scoring,
+      srNo: srNo ?? existingNews.srNo,
+      content: content ?? existingNews.content,
+    });
+
+    await newsRepo.save(existingNews);
+
+    return res.status(200).json({
+      message: "News updated successfully",
+      data: existingNews,
+    });
+  } catch (error) {
+    console.error("Error updating news:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+});
+
+// 🔴 DELETE /api/news/:id — Delete a news record
+router.delete("/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const newsRepo = AppDataSource.getRepository(News);
+
+    const result = await newsRepo.delete(Number(id));
+
+    if (result.affected === 0) {
+      return res.status(404).json({ message: "News not found" });
+    }
+
+    return res.status(200).json({ message: "News deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting news:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+});
 
 export default router;
