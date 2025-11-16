@@ -3,6 +3,8 @@ import serverless from "serverless-http";
 import { AppDataSource } from "./data.source.js";
 import bodyParser from "body-parser";
 import newsRoutes from "./routes/postRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+
 import cors from "cors";
 
 const app = express();
@@ -12,7 +14,7 @@ app.use(
     origin: "*", // or specify your frontend: ["https://your-frontend.com"]
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  })  
 );
 app.use(bodyParser.json());
 
@@ -61,6 +63,18 @@ app.use("/api/news", async (req, res, next) => {
     res.status(500).json({ message: "Internal server error", error: errorMessage });
   }
 }, newsRoutes);
+//userroutes
+app.get("/users", (req, res) => {
+  res.json({ message: "Users endpoint working!" });
+});
+app.use("/api/users", async (req, res, next) => {
+  try {
+    await initDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ message: "Database init failed" });
+  }
+}, userRoutes);
 
 // Export Lambda handler
 export const handler = serverless(app);

@@ -1,6 +1,11 @@
 import { Router, Request, Response } from "express";
 import { AppDataSource } from "../data.source";
 import { User } from "../entities/User";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = Router();
 const userRepo = AppDataSource.getRepository(User);
@@ -60,4 +65,81 @@ router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// Signup API
+router.post("/signup", async (req: Request, res: Response) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+
+    // Check if user already exists
+    const existingUser = await userRepository.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const user = userRepository.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    // Save user to database
+    await userRepository.save(user);
+
+    // Send success response (omit password in response)
+    const { password: _, ...userWithoutPassword } = user;
+    return res.status(201).json({ message: "User created", user: userWithoutPassword });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// 🔐 LOGIN API
+router.post("/login", async(req: Request, res: Response)=>{
+  try{
+    const { email, password } = req.body;
+    if(!email || !password){
+      return res.status(400).json({message:"Fields required"});
+    }
+    const user = await userRepo.findOne({ where:{email}});
+    if(!user){
+      return res.status(404).json({ message: "User not found"});
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if(!isPasswordValid){
+      return res.status(401).json({message: "Invalid credential"});
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email},
+      process.env.JWT_SECRET as string,
+      {expiresIn: "1h"}
+    );
+    return res.status(200).json({
+      message: "Login Successfull",
+      token, 
+      user:{
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+
+    });
+  }
+catch(error){
+  console.error("Login Error:", error);
+    return res.status(500).json({ message: "Server error" });
+}
+});
 export default router;
