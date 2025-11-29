@@ -4,6 +4,8 @@ import { AppDataSource } from "./data.source.js";
 import bodyParser from "body-parser";
 import newsRoutes from "./routes/postRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import subCategoryRoutes from "./routes/subCategoryRoutes.js";
 
 import cors from "cors";
 
@@ -75,6 +77,9 @@ app.use("/api/users", async (req, res, next) => {
     res.status(500).json({ message: "Database init failed" });
   }
 }, userRoutes);
+
+app.use("/api/categories", categoryRoutes);
+app.use("/api/subcategories", subCategoryRoutes);
 
 // Export Lambda handler
 export const handler = serverless(app);
