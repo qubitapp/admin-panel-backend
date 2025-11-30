@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
-import { AppDataSource } from "../data.source";
-import { User } from "../entities/User";
+import { AppDataSource } from "../data.source.js";
+import { User } from "../entities/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -76,33 +76,38 @@ router.post("/signup", async (req: Request, res: Response) => {
 
     const userRepository = AppDataSource.getRepository(User);
 
-    // Check if user already exists
     const existingUser = await userRepository.findOne({ where: { email } });
     if (existingUser) {
       return res.status(409).json({ message: "User already exists" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const user = userRepository.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
+    const user = userRepository.create({ name, email, password: hashedPassword });
 
-    // Save user to database
     await userRepository.save(user);
 
-    // Send success response (omit password in response)
+    // Generate JWT Token 👇 FIX
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1h" }
+    );
+
     const { password: _, ...userWithoutPassword } = user;
-    return res.status(201).json({ message: "User created", user: userWithoutPassword });
+
+    return res.status(201).json({
+      message: "User created successfully",
+      token, // 👈 TOKEN ADDED HERE
+      user: userWithoutPassword,
+    });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 // 🔐 LOGIN API
 router.post("/login", async(req: Request, res: Response)=>{

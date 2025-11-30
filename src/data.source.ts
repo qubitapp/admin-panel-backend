@@ -2,7 +2,7 @@ import "dotenv/config";
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { User } from "./entities/User.js";
-import { News } from "./entities/Post";
+import { News } from "./entities/Post.js";
 import { Category } from "./entities/Category.js";
 import { SubCategory } from "./entities/subCategory.js";
 
